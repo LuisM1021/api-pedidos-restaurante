@@ -1,4 +1,4 @@
-const Dish = require("../domain/dish");
+const boom = require('@hapi/boom');
 
 class DishService{
 
@@ -12,13 +12,28 @@ class DishService{
     async find(){
 
         const dishes = await this.dishRepository.getAllDishes();
-        return dishes.rows;
+        return dishes;
 
     }
 
-    async create({name, price, categoryId}){
-        const dish = Dish.create(name, price, categoryId);
-        return await this.dishRepository.save(dish);
+    async findOne(id){
+        const dish = await this.dishRepository.getDishById(id);
+        return dish;
+    }
+
+    async create(data){
+        if(data == null){
+            throw boom.badRequest('Data is required');
+        }
+        return await this.dishRepository.save(data);
+    }
+
+    async update(id, changes){
+        if(changes == null){
+            throw boom.badRequest('Data is required');
+        }
+        const updatedDish = await this.dishRepository.update(id, changes);
+        return updatedDish;
     }
 
 }
