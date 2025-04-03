@@ -5,7 +5,17 @@ class DishRepository{
 
     async getAllDishes() {
         try{
-            const dishes = await pool.query('SELECT * FROM dishes');
+            const query = `
+            SELECT d.id, d.name, d.description, d.price, d.is_active, d.image_url,
+            json_build_object(
+                'id', c.id,
+                'name', c.name,
+                'description', c.description
+            ) as category
+            FROM dishes d
+            JOIN categories c on d.category_id = c.id 
+            `;
+            const dishes = await pool.query(query);
             return dishes.rows;
         }catch(error){
             throw boom.internal(`Error fetching dishes: ${error.message}`);
@@ -27,8 +37,8 @@ class DishRepository{
     }
 
     async save(dish){
-        const query = 'INSERT INTO dishes(name, price, category_id) VALUES($1, $2, $3) RETURNING *';
-        const values = [dish.name, dish.price, dish.categoryId];
+        const query = 'INSERT INTO dishes(name, description, price, category_id) VALUES($1, $2, $3) RETURNING *';
+        const values = [dish.name, dish.description, dish.price, dish.categoryId];
         try{
             const createdDish = await pool.query(query, values);
             return createdDish.rows[0];
@@ -52,6 +62,10 @@ class DishRepository{
             fields.push(`name = $${index++}`);
             values.push(changes.name);
         }
+        if(changes.description){
+            fields.push(`description = $${index++}`);
+            values.push(changes.description);
+        }
         if(changes.price){
             fields.push(`price = $${index++}`);
             values.push(changes.price);
@@ -63,6 +77,10 @@ class DishRepository{
         if(changes.isActive !== undefined){
             fields.push(`is_active = $${index++}`);
             values.push(changes.isActive);
+        }
+        if(changes.imageUrl){
+            fields.push(`image_url = $${index++}`);
+            values.push(changes.imageUrl);
         }
         
         if(fields.length === 0){

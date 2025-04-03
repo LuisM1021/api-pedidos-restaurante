@@ -1,4 +1,6 @@
 const express = require('express');
+const path = require('path');
+const uploadImage = require('../utils/multer');
 const DishService = require('../services/dishService');
 const validationHandler = require('../middlewares/validationHandler');
 const { createDishSchema, getDishSchema, updateDishSchema } = require('../schemas/dishSchema');
@@ -44,5 +46,24 @@ router.patch('/:id',
         }
     }
 );
+
+router.post('/img/:id',
+    validationHandler(getDishSchema, 'params'),
+    uploadImage.single('image'),
+    async(req, res, next) => {
+        try{
+            const { id } = req.params;
+            const file = req.file;
+
+            const imageUrl = await service.uploadImage(id, file);
+            res.status(201).json({ message: 'Image saved', url: imageUrl })
+
+        }catch(error){
+            next(error);
+        }
+    }
+);
+
+router.use('/img', express.static(path.join(__dirname, '../../uploads')));
 
 module.exports = router;

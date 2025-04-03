@@ -1,4 +1,6 @@
 const boom = require('@hapi/boom');
+const path = require('path');
+const fs = require('fs');
 
 class DishService{
 
@@ -36,6 +38,22 @@ class DishService{
         return updatedDish;
     }
 
+    async uploadImage(id, file){
+        if(!file){
+            throw boom.badRequest('No se pudo subir la imagen');
+        }
+        try{
+            const dish = await this.findOne(id);
+            const imageUrl = `/uploads/${file.filename}`;
+
+            await this.dishRepository.update(dish.id, { imageUrl });
+            return imageUrl;
+        }catch(error){
+            fs.unlinkSync(path.join(__dirname, '../../uploads', file.filename));
+            throw boom.notFound('Dish not found');
+        }
+
+    }
 }
 
 module.exports = DishService;
