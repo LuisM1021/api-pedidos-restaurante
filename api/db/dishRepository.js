@@ -5,8 +5,8 @@ class DishRepository{
 
     async getAllDishes() {
         try{
-            const query = `
-            SELECT d.id, d.name, d.description, d.price, d.is_active, d.image_url,
+                    const query = `
+            SELECT d.id, d.name, d.description, d.price, d.is_active as "isActive", d.image_url as "imageUrl",
             json_build_object(
                 'id', c.id,
                 'name', c.name,
@@ -23,13 +23,20 @@ class DishRepository{
     }
 
     async getDishById(id) {
-        const query = 'SELECT * FROM dishes WHERE id = $1';
+        const query = `
+        SELECT d.id, d.name, d.description, d.price, d.is_active as "isActive", d.image_url as "imageUrl",
+            json_build_object(
+                'id', c.id,
+                'name', c.name,
+                'description', c.description
+            ) as category
+        FROM dishes d 
+        JOIN categories c on d.category_id = c.id 
+        WHERE d.id = $1
+        `;
         const values = [id];
         try{
             const dish = await pool.query(query, values);
-            if(dish.rows.length === 0){
-                throw boom.notFound('Dish not found');
-            }
             return dish.rows[0];
         }catch(error){
             throw boom.internal(`Error fetching dish: ${error.message}`);
@@ -37,7 +44,7 @@ class DishRepository{
     }
 
     async save(dish){
-        const query = 'INSERT INTO dishes(name, description, price, category_id) VALUES($1, $2, $3) RETURNING *';
+        const query = 'INSERT INTO dishes(name, description, price, category_id) VALUES($1, $2, $3) RETURNING d.id, d.name, d.description, d.price, d.is_active as "isActive", d.image_url as "imageUrl"';
         const values = [dish.name, dish.description, dish.price, dish.categoryId];
         try{
             const createdDish = await pool.query(query, values);
@@ -87,7 +94,19 @@ class DishRepository{
             throw boom.badRequest('No changes provided');
         }
 
-        const query = `UPDATE dishes SET ${fields.join(',')} WHERE id = $${index} RETURNING *`;
+        const query = `
+        UPDATE dishes d 
+        SET ${fields.join(',')}
+        FROM categories c
+        WHERE d.id = $${index} AND d.category_id = c.id
+        RETURNING 
+            d.id, d.name, d.description, d.price, d.is_active as "isActive", d.image_url as "imageUrl",
+            json_build_object(
+                'id', c.id,
+                'name', c.name,
+                'description', c.description
+            ) as category
+        `;
         values.push(id);
         try{
             const updatedDish = await pool.query(query, values);

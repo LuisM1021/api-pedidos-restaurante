@@ -19,6 +19,18 @@ router.get('/', async(req, res, next) => {
     }
 });
 
+router.get('/:id',
+    validationHandler(getDishSchema),
+    async(req, res, next) => {
+    try{
+        const { id } = req.params;
+        const dish = await service.findOne(id);
+        res.status(200).json(dish);
+    }catch(error){
+        next(error);
+    }
+})
+
 router.post('/',
     validationHandler(createDishSchema, 'body'),
     async(req, res, next) => {

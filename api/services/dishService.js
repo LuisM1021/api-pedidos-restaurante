@@ -20,6 +20,9 @@ class DishService{
 
     async findOne(id){
         const dish = await this.dishRepository.getDishById(id);
+        if(!dish){
+            throw boom.notFound('Dish not found');
+        }
         return dish;
     }
 
@@ -44,9 +47,13 @@ class DishService{
         }
         try{
             const dish = await this.findOne(id);
-            const imageUrl = `/uploads/${file.filename}`;
+            const imageUrl = `/${file.filename}`;
 
             await this.dishRepository.update(dish.id, { imageUrl });
+            console.log('DIsh: ', dish)
+            if(dish.imageUrl){
+                fs.unlinkSync(path.join(__dirname, '../../uploads', dish.imageUrl));
+            }
             return imageUrl;
         }catch(error){
             fs.unlinkSync(path.join(__dirname, '../../uploads', file.filename));
