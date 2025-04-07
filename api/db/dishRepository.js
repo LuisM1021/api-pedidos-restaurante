@@ -115,8 +115,8 @@ class DishRepository{
             }
             return updatedDish.rows[0];
         }catch(error){
-            if (error.code === '23503') { // Código de error de clave foránea en PostgreSQL
-                throw boom.badRequest('Category ID does not exist');
+            if(error.output.statusCode === 404){
+                throw error;
             }
             throw boom.internal(`Error updating dish: ${error.message}`);
         }
