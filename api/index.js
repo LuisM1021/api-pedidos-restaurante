@@ -13,7 +13,7 @@ const allowedOrigins = ['http://localhost:5173', 'http://192.168.1.25:5173'];
 app.use(express.json());
 app.use(cors({
     origin: allowedOrigins,
-    methods: ['GET', 'POST', 'PATCH'],
+    methods: ['GET', 'POST', 'PATCH', 'DELETE'],
     credentials: false
 }));
 

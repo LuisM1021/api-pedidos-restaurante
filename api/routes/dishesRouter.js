@@ -10,6 +10,16 @@ const router = express.Router();
 const DishRepository = require('../db/dishRepository');
 const service = new DishService(new DishRepository());
 
+//TODO: Endpoint de categories
+router.get('/categories', async(req, res, next) => {
+    try{
+        const categories = await service.getCategories();
+        res.status(200).json(categories);
+    }catch(error){
+        next(error);
+    }
+});
+
 router.get('/', async(req, res, next) => {
     try{
         const dishes = await service.find();
@@ -66,7 +76,7 @@ router.post('/img/:id',
         try{
             const { id } = req.params;
             const file = req.file;
-
+            
             const imageUrl = await service.uploadImage(id, file);
             res.status(201).json({ message: 'Image saved', url: imageUrl })
 

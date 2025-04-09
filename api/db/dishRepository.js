@@ -3,6 +3,18 @@ const boom = require('@hapi/boom');
 
 class DishRepository{
 
+    async getAllCategories() {
+        try{
+                    const query = `
+            SELECT id, name, description FROM categories 
+            `;
+            const categories = await pool.query(query);
+            return categories.rows;
+        }catch(error){
+            throw boom.internal(`Error fetching categories: ${error.message}`);
+        }
+    }
+
     async getAllDishes() {
         try{
                     const query = `
@@ -44,12 +56,14 @@ class DishRepository{
     }
 
     async save(dish){
-        const query = 'INSERT INTO dishes(name, description, price, category_id) VALUES($1, $2, $3) RETURNING d.id, d.name, d.description, d.price, d.is_active as "isActive", d.image_url as "imageUrl"';
+        console.log('to save: ', dish)
+        const query = 'INSERT INTO dishes(name, description, price, category_id) VALUES($1, $2, $3, $4) RETURNING id';
         const values = [dish.name, dish.description, dish.price, dish.categoryId];
         try{
             const createdDish = await pool.query(query, values);
             return createdDish.rows[0];
         }catch(error){
+            console.log('ERRORrRRR_ ', error)
             if (error.code === '23503') { // Código de error de clave foránea en PostgreSQL
                 throw boom.badRequest('Category ID does not exist');
             }else if (error.code === '23505') { // Código de error de duplicado en PostgreSQL{
@@ -93,19 +107,22 @@ class DishRepository{
         if(fields.length === 0){
             throw boom.badRequest('No changes provided');
         }
-
+        
         const query = `
-        UPDATE dishes d 
-        SET ${fields.join(',')}
-        FROM categories c
-        WHERE d.id = $${index} AND d.category_id = c.id
-        RETURNING 
-            d.id, d.name, d.description, d.price, d.is_active as "isActive", d.image_url as "imageUrl",
+        WITH updated AS (
+            UPDATE dishes
+            SET ${fields.join(',')}
+            WHERE id = $${index}
+            RETURNING *
+        )
+        SELECT d.id, d.name, d.description, d.price, d.is_active as "isActive", d.image_url as "imageUrl",
             json_build_object(
                 'id', c.id,
                 'name', c.name,
                 'description', c.description
             ) as category
+        FROM updated d
+        JOIN categories c ON d.category_id = c.id
         `;
         values.push(id);
         try{

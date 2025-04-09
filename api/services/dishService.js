@@ -11,6 +11,13 @@ class DishService{
 
     }
 
+    async getCategories(){
+
+        const categories = await this.dishRepository.getAllCategories();
+        return categories;
+
+    }
+
     async find(){
 
         const dishes = await this.dishRepository.getAllDishes();
